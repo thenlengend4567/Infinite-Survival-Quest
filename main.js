@@ -22,6 +22,11 @@ window.addEventListener('keydown', (e) => {
     if (gameState.keys.hasOwnProperty(e.key)) {
         gameState.keys[e.key] = true;
     }
+
+    // Toggle crafting menu
+    if (e.key === 'c') {
+        gameState.ui.craftMenu.open = !gameState.ui.craftMenu.open;
+    }
 });
 
 window.addEventListener('keyup', (e) => {
