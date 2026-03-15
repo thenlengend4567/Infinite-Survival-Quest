@@ -1,5 +1,7 @@
 import { gameState } from './state.js';
 import { drawWorld } from './world.js';
+import { updatePlayer, drawPlayer } from './player.js';
+import { setupUI, drawUI } from './ui.js';
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -28,24 +30,36 @@ window.addEventListener('keyup', (e) => {
     }
 });
 
+// Initialize UI touch listeners
+setupUI(canvas);
+
 let lastTime = performance.now();
-const CAMERA_SPEED = 300; // pixels per second
 
 function update(deltaTime) {
-    const keys = gameState.keys;
-    const moveAmount = CAMERA_SPEED * (deltaTime / 1000);
+    // Update player position
+    updatePlayer(deltaTime);
 
-    if (keys.w || keys.ArrowUp) gameState.camera.y -= moveAmount;
-    if (keys.s || keys.ArrowDown) gameState.camera.y += moveAmount;
-    if (keys.a || keys.ArrowLeft) gameState.camera.x -= moveAmount;
-    if (keys.d || keys.ArrowRight) gameState.camera.x += moveAmount;
+    // Smooth camera tracking (lerp)
+    const { player, camera, canvas } = gameState;
+    const targetCameraX = player.x - (canvas.width / 2);
+    const targetCameraY = player.y - (canvas.height / 2);
+
+    const LERP_FACTOR = 5 * (deltaTime / 1000); // Adjust for smoothness
+    camera.x += (targetCameraX - camera.x) * LERP_FACTOR;
+    camera.y += (targetCameraY - camera.y) * LERP_FACTOR;
 }
 
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw the procedural world
+    // 1. Draw the procedural world
     drawWorld(ctx);
+
+    // 2. Draw the player
+    drawPlayer(ctx);
+
+    // 3. Draw UI
+    drawUI(ctx);
 
     // Optional: Draw debug information
     ctx.fillStyle = 'white';

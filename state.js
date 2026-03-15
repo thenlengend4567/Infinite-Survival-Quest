@@ -15,6 +15,24 @@ export const gameState = {
     world: {
         chunks: new Map() // Caches generated chunk data
     },
+    player: {
+        x: 0,
+        y: 0,
+        size: 24, // Slightly smaller than a 32x32 tile
+        speed: 200 // Max pixels per second
+    },
+    ui: {
+        joystick: {
+            active: false,
+            originX: 0,
+            originY: 0,
+            currentX: 0,
+            currentY: 0,
+            distance: 0, // Current analog distance from origin
+            maxDistance: 50, // Max distance for full speed
+            angle: 0
+        }
+    },
     keys: {
         w: false,
         a: false,
