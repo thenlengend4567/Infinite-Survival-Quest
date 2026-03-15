@@ -13,13 +13,23 @@ export const gameState = {
         chunkSize: 16 // 16x16 tiles per chunk
     },
     world: {
-        chunks: new Map() // Caches generated chunk data
+        chunks: new Map(), // Caches generated chunk data
+        destroyedEntities: new Set() // Set of string IDs (chunkX_chunkY_localX_localY)
     },
     player: {
         x: 0,
         y: 0,
         size: 24, // Slightly smaller than a 32x32 tile
-        speed: 200 // Max pixels per second
+        speed: 200, // Max pixels per second
+        inventory: {
+            wood: 0,
+            stone: 0
+        },
+        gathering: {
+            targetId: null,
+            timer: 0,
+            requiredTime: 1000 // ms
+        }
     },
     ui: {
         joystick: {
