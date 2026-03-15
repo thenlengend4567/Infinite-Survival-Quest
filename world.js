@@ -105,16 +105,21 @@ function getChunk(chunkX, chunkY) {
             const index = y * size + x;
             tiles[index] = tileId;
 
-            // Spawn Entities (Trees in Forest, Rocks in Grass)
+            // Spawn Entities (Trees in Forest, Rocks & Bushes in Grass)
             const entityId = `${chunkX}_${chunkY}_${x}_${y}`;
             if (!gameState.world.destroyedEntities.has(entityId)) {
                 // Use random function with a slight offset to ensure it's deterministic but decoupled from elevation
                 const entityRand = Math.abs(random(globalX + 1000, globalY + 1000));
+                const secondaryRand = Math.abs(random(globalX + 2000, globalY + 2000)); // Second decoupled random
 
                 if (tileId === 3 && entityRand < 0.15) { // 15% chance for a tree in a forest tile
                     entities.set(index, { type: 'tree', id: entityId, localX: x, localY: y });
-                } else if (tileId === 2 && entityRand < 0.05) { // 5% chance for a rock in a grass tile
-                    entities.set(index, { type: 'rock', id: entityId, localX: x, localY: y });
+                } else if (tileId === 2) {
+                    if (entityRand < 0.05) { // 5% chance for a rock in a grass tile
+                        entities.set(index, { type: 'rock', id: entityId, localX: x, localY: y });
+                    } else if (secondaryRand < 0.05) { // 5% chance for a bush in a grass tile
+                        entities.set(index, { type: 'bush', id: entityId, localX: x, localY: y });
+                    }
                 }
             }
         }
@@ -290,6 +295,21 @@ function drawChunk(ctx, chunk) {
                     ctx.strokeStyle = '#4A4A4A';
                     ctx.lineWidth = 1;
                     ctx.strokeRect(centerX - 10, centerY - 10, 20, 20);
+                } else if (entity.type === 'bush') {
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, 12, 0, Math.PI * 2); // 24x24 circle
+                    ctx.fillStyle = '#006400'; // Dark Green
+                    ctx.fill();
+
+                    // Draw 3 red dots for berries
+                    ctx.fillStyle = '#FF0000'; // Red
+                    ctx.beginPath(); ctx.arc(centerX - 5, centerY - 3, 3, 0, Math.PI * 2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(centerX + 4, centerY - 4, 3, 0, Math.PI * 2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(centerX, centerY + 5, 3, 0, Math.PI * 2); ctx.fill();
+
+                    ctx.strokeStyle = '#004d00';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath(); ctx.arc(centerX, centerY, 12, 0, Math.PI * 2); ctx.stroke();
                 }
             }
         }
