@@ -21,9 +21,19 @@ export const gameState = {
         y: 0,
         size: 24, // Slightly smaller than a 32x32 tile
         speed: 200, // Max pixels per second
+        stats: {
+            health: 100,
+            hunger: 100
+        },
+        timers: {
+            hunger: 0,
+            starvation: 0,
+            water: 0
+        },
         inventory: {
             wood: 0,
-            stone: 0
+            stone: 0,
+            berries: 0
         },
         tools: {
             axe: false,
@@ -37,6 +47,7 @@ export const gameState = {
         }
     },
     ui: {
+        gameOver: false,
         craftMenu: {
             open: false,
             buttons: [] // Dynamically calculated bounding boxes for clicks
@@ -58,6 +69,7 @@ export const gameState = {
         s: false,
         d: false,
         c: false,
+        f: false, // For eating berries
         ArrowUp: false,
         ArrowLeft: false,
         ArrowDown: false,

@@ -18,16 +18,52 @@ export function setupUI(canvas) {
         }
 
         // 2. Check the persistent Mobile "Craft" button (bottom right)
-        const btnRadius = 30;
-        const btnX = canvas.width - 50;
-        const btnY = canvas.height - 50;
+        let btnRadius = 30;
+        let btnX = canvas.width - 50;
+        let btnY = canvas.height - 50;
 
         // Simple circle collision
-        const dx = clientX - btnX;
-        const dy = clientY - btnY;
+        let dx = clientX - btnX;
+        let dy = clientY - btnY;
         if (dx * dx + dy * dy <= btnRadius * btnRadius) {
             craftMenu.open = !craftMenu.open;
             return true; // Input handled
+        }
+
+        // 3. Check "Eat" Button (bottom left)
+        btnX = 50;
+        btnY = canvas.height - 50;
+        dx = clientX - btnX;
+        dy = clientY - btnY;
+        if (dx * dx + dy * dy <= btnRadius * btnRadius) {
+            gameState.keys.f = true; // Simulate 'f' key press
+            return true;
+        }
+
+        // 4. Check "Respawn" button if Game Over
+        if (gameState.ui.gameOver) {
+            // Rough bounding box for the Respawn button in center
+            const rx = canvas.width / 2 - 75;
+            const ry = canvas.height / 2 + 20;
+            const rw = 150;
+            const rh = 40;
+            if (clientX >= rx && clientX <= rx + rw && clientY >= ry && clientY <= ry + rh) {
+                // Perform Respawn
+                gameState.player.x = 0;
+                gameState.player.y = 0;
+                gameState.player.stats.health = 100;
+                gameState.player.stats.hunger = 100;
+                gameState.player.inventory.wood = 0;
+                gameState.player.inventory.stone = 0;
+                gameState.player.inventory.berries = 0;
+                gameState.player.tools.axe = false;
+                gameState.player.tools.pickaxe = false;
+                gameState.player.timers.hunger = 0;
+                gameState.player.timers.starvation = 0;
+                gameState.player.timers.water = 0;
+                gameState.ui.gameOver = false;
+                return true;
+            }
         }
 
         return false;
@@ -146,15 +182,23 @@ export function drawUI(ctx) {
     // 1. Draw HUD
     drawHUD(ctx);
 
-    // 2. Draw Mobile Craft Button
+    // 2. Draw Stats
+    drawStats(ctx);
+
+    // 3. Draw Mobile Buttons
     drawCraftButton(ctx);
+    drawEatButton(ctx);
 
-    // 3. Draw Crafting Menu (if open)
-    drawCraftMenu(ctx);
+    // 4. Draw Game Over or Crafting Menu
+    if (gameState.ui.gameOver) {
+        drawGameOver(ctx);
+    } else {
+        drawCraftMenu(ctx);
+    }
 
-    // 4. Draw Joystick (if active)
+    // 5. Draw Joystick (if active and game is playing)
     const { joystick } = gameState.ui;
-    if (!joystick.active) return;
+    if (!joystick.active || gameState.ui.gameOver) return;
 
     // Draw joystick base
     ctx.beginPath();
@@ -214,6 +258,90 @@ function drawHUD(ctx) {
     }
 
     ctx.textAlign = 'left'; // Reset for debug info
+}
+
+function drawStats(ctx) {
+    const { stats } = gameState.player;
+    const startX = 20;
+    const startY = 20;
+    const barWidth = 200;
+    const barHeight = 20;
+
+    // Health Bar
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.fillRect(startX, startY, barWidth, barHeight);
+    ctx.fillStyle = '#FF0000'; // Red
+    ctx.fillRect(startX, startY, barWidth * (stats.health / 100), barHeight);
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(startX, startY, barWidth, barHeight);
+
+    // Hunger Bar
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.fillRect(startX, startY + 30, barWidth, barHeight);
+    ctx.fillStyle = '#FFA500'; // Orange
+    ctx.fillRect(startX, startY + 30, barWidth * (stats.hunger / 100), barHeight);
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(startX, startY + 30, barWidth, barHeight);
+}
+
+function drawEatButton(ctx) {
+    const { canvas } = gameState;
+    const { inventory } = gameState.player;
+    const btnRadius = 30;
+    const btnX = 50;
+    const btnY = canvas.height - 50;
+
+    ctx.beginPath();
+    ctx.arc(btnX, btnY, btnRadius, 0, Math.PI * 2);
+    ctx.fillStyle = inventory.berries > 0 ? 'rgba(50, 150, 50, 0.7)' : 'rgba(100, 100, 100, 0.5)';
+    ctx.fill();
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 16px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('EAT', btnX, btnY - 5);
+    ctx.font = '12px sans-serif';
+    ctx.fillText(`(${inventory.berries})`, btnX, btnY + 12);
+
+    ctx.textBaseline = 'alphabetic'; // Reset
+    ctx.textAlign = 'left';
+}
+
+function drawGameOver(ctx) {
+    const { canvas } = gameState;
+
+    // Dark overlay
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = '#FF0000';
+    ctx.font = 'bold 64px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('YOU DIED', canvas.width / 2, canvas.height / 2 - 40);
+
+    // Respawn button
+    const btnW = 150;
+    const btnH = 40;
+    const btnX = canvas.width / 2 - btnW / 2;
+    const btnY = canvas.height / 2 + 20;
+
+    ctx.fillStyle = '#4A4A4A';
+    ctx.fillRect(btnX, btnY, btnW, btnH);
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(btnX, btnY, btnW, btnH);
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '24px sans-serif';
+    ctx.fillText('Respawn', canvas.width / 2, btnY + 28);
+
+    ctx.textAlign = 'left';
 }
 
 function drawCraftButton(ctx) {

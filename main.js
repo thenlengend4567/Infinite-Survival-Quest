@@ -69,8 +69,9 @@ function draw() {
     // Optional: Draw debug information
     ctx.fillStyle = 'white';
     ctx.font = '16px monospace';
-    ctx.fillText(`Camera: (${Math.round(gameState.camera.x)}, ${Math.round(gameState.camera.y)})`, 10, 20);
-    ctx.fillText(`Chunks Loaded: ${gameState.world.chunks.size}`, 10, 40);
+    // Offset debug info down so it doesn't overlap Health/Hunger bars
+    ctx.fillText(`Camera: (${Math.round(gameState.camera.x)}, ${Math.round(gameState.camera.y)})`, 10, 80);
+    ctx.fillText(`Chunks Loaded: ${gameState.world.chunks.size}`, 10, 100);
 }
 
 function gameLoop(currentTime) {
