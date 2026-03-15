@@ -84,8 +84,11 @@ export function setupUI(canvas) {
 }
 
 export function drawUI(ctx) {
-    const { joystick } = gameState.ui;
+    // 1. Draw HUD
+    drawHUD(ctx);
 
+    // 2. Draw Joystick (if active)
+    const { joystick } = gameState.ui;
     if (!joystick.active) return;
 
     // Draw joystick base
@@ -106,4 +109,32 @@ export function drawUI(ctx) {
     ctx.arc(drawX, drawY, 20, 0, Math.PI * 2);
     ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
     ctx.fill();
+
+}
+
+function drawHUD(ctx) {
+    const { inventory } = gameState.player;
+    const { canvas } = gameState;
+
+    const text = `Wood: ${inventory.wood} | Stone: ${inventory.stone}`;
+
+    ctx.font = 'bold 20px sans-serif';
+    ctx.textAlign = 'right';
+
+    // Draw background for HUD
+    const padding = 10;
+    const textWidth = ctx.measureText(text).width;
+    const bgWidth = textWidth + padding * 2;
+    const bgHeight = 40;
+    const startX = canvas.width - bgWidth - 20;
+    const startY = 20;
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.fillRect(startX, startY, bgWidth, bgHeight);
+
+    // Draw Text
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillText(text, canvas.width - 20 - padding, startY + 28);
+
+    ctx.textAlign = 'left'; // Reset for debug info
 }

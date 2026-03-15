@@ -73,6 +73,7 @@ function getChunk(chunkX, chunkY) {
 
     const size = gameState.settings.chunkSize;
     const tiles = new Array(size * size);
+    const entities = new Map(); // local tile index -> entity object
 
     // Noise scale: Smaller number = larger features.
     // We want features 2-4 chunks wide.
@@ -103,13 +104,27 @@ function getChunk(chunkX, chunkY) {
 
             const index = y * size + x;
             tiles[index] = tileId;
+
+            // Spawn Entities (Trees in Forest, Rocks in Grass)
+            const entityId = `${chunkX}_${chunkY}_${x}_${y}`;
+            if (!gameState.world.destroyedEntities.has(entityId)) {
+                // Use random function with a slight offset to ensure it's deterministic but decoupled from elevation
+                const entityRand = Math.abs(random(globalX + 1000, globalY + 1000));
+
+                if (tileId === 3 && entityRand < 0.15) { // 15% chance for a tree in a forest tile
+                    entities.set(index, { type: 'tree', id: entityId, localX: x, localY: y });
+                } else if (tileId === 2 && entityRand < 0.05) { // 5% chance for a rock in a grass tile
+                    entities.set(index, { type: 'rock', id: entityId, localX: x, localY: y });
+                }
+            }
         }
     }
 
     const chunk = {
         x: chunkX,
         y: chunkY,
-        tiles: tiles
+        tiles: tiles,
+        entities: entities // Map of tileIndex -> entity
     };
 
     gameState.world.chunks.set(chunkKey, chunk);
@@ -141,6 +156,29 @@ export function getTileAtWorldPos(worldX, worldY) {
 
     const index = localY * chunkSize + localX;
     return chunk.tiles[index];
+}
+
+/**
+ * Helper to get the Entity object at a specific global pixel coordinate (if one exists).
+ */
+export function getEntityAtWorldPos(worldX, worldY) {
+    const { tileSize, chunkSize } = gameState.settings;
+
+    const chunkPixelSize = tileSize * chunkSize;
+
+    const chunkX = Math.floor(worldX / chunkPixelSize);
+    const chunkY = Math.floor(worldY / chunkPixelSize);
+
+    const chunk = getChunk(chunkX, chunkY);
+
+    let localX = Math.floor((worldX % chunkPixelSize) / tileSize);
+    let localY = Math.floor((worldY % chunkPixelSize) / tileSize);
+
+    if (localX < 0) localX += chunkSize;
+    if (localY < 0) localY += chunkSize;
+
+    const index = localY * chunkSize + localX;
+    return chunk.entities.has(index) ? { entity: chunk.entities.get(index), index, chunk } : null;
 }
 
 /**
@@ -227,6 +265,33 @@ function drawChunk(ctx, chunk) {
 
             // Draw tile with a tiny fractional overlap to prevent rendering gaps
             ctx.fillRect(screenX, screenY, tileSize + 0.5, tileSize + 0.5);
+
+            // Draw Entity if it exists on this tile
+            if (chunk.entities.has(index)) {
+                const entity = chunk.entities.get(index);
+                const centerX = screenX + tileSize / 2;
+                const centerY = screenY + tileSize / 2;
+
+                if (entity.type === 'tree') {
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, 14, 0, Math.PI * 2); // 28x28 circle
+                    ctx.fillStyle = '#5C4033'; // Dark Brown
+                    ctx.fill();
+
+                    // Optional outline
+                    ctx.strokeStyle = '#3E2723';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                } else if (entity.type === 'rock') {
+                    ctx.fillStyle = '#696969'; // Dim Gray
+                    ctx.fillRect(centerX - 10, centerY - 10, 20, 20); // 20x20 square
+
+                    // Optional outline
+                    ctx.strokeStyle = '#4A4A4A';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(centerX - 10, centerY - 10, 20, 20);
+                }
+            }
         }
     }
 }
