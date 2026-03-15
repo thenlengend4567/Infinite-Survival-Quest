@@ -1,0 +1,1 @@
+this project is a Java script game using the Canvas API use modular files: world.js ai.js player.js and ui.js  always prioritize preforman5 for procedural generation and check for logic errors in movements no external libraries  use type="module" in the script tag within index.html ensure all variables are contained within  a "Game State" object to prevent leaks
