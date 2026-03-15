@@ -80,6 +80,9 @@ function getChunk(chunkX, chunkY) {
     // 1 chunk is 16 tiles. So 2-4 chunks is 32-64 tiles.
     const noiseScale = 0.03;
 
+    // Flora Noise scale for Berry Groves (slightly smaller than biomes)
+    const floraScale = 0.05;
+
     for (let y = 0; y < size; y++) {
         for (let x = 0; x < size; x++) {
             // Global tile coordinates
@@ -88,6 +91,7 @@ function getChunk(chunkX, chunkY) {
 
             // Generate noise value between ~0.0 and 1.0
             const elevation = fbm(globalX * noiseScale, globalY * noiseScale, 3);
+            const floraNoise = fbm(globalX * floraScale + 1000, globalY * floraScale + 1000, 2);
 
             // Determine Biome based on Elevation
             let tileId = 2; // Default Grass
@@ -110,14 +114,15 @@ function getChunk(chunkX, chunkY) {
             if (!gameState.world.destroyedEntities.has(entityId)) {
                 // Use random function with a slight offset to ensure it's deterministic but decoupled from elevation
                 const entityRand = Math.abs(random(globalX + 1000, globalY + 1000));
-                const secondaryRand = Math.abs(random(globalX + 2000, globalY + 2000)); // Second decoupled random
 
                 if (tileId === 3 && entityRand < 0.15) { // 15% chance for a tree in a forest tile
                     entities.set(index, { type: 'tree', id: entityId, localX: x, localY: y });
                 } else if (tileId === 2) {
                     if (entityRand < 0.05) { // 5% chance for a rock in a grass tile
                         entities.set(index, { type: 'rock', id: entityId, localX: x, localY: y });
-                    } else if (secondaryRand < 0.05) { // 5% chance for a bush in a grass tile
+                    } else if (floraNoise > 0.6 && entityRand > 0.05 && entityRand < 0.10) {
+                        // Berry Grove: If flora noise is high, and rand is between 5% and 10% (a 5% slice)
+                        // we use the same random roll slice to prevent overlapping a rock and a bush on the same tile
                         entities.set(index, { type: 'bush', id: entityId, localX: x, localY: y });
                     }
                 }
@@ -297,19 +302,21 @@ function drawChunk(ctx, chunk) {
                     ctx.strokeRect(centerX - 10, centerY - 10, 20, 20);
                 } else if (entity.type === 'bush') {
                     ctx.beginPath();
-                    ctx.arc(centerX, centerY, 12, 0, Math.PI * 2); // 24x24 circle
+                    ctx.arc(centerX, centerY, 15, 0, Math.PI * 2); // 30x30 circle
                     ctx.fillStyle = '#006400'; // Dark Green
                     ctx.fill();
 
-                    // Draw 3 red dots for berries
-                    ctx.fillStyle = '#FF0000'; // Red
-                    ctx.beginPath(); ctx.arc(centerX - 5, centerY - 3, 3, 0, Math.PI * 2); ctx.fill();
-                    ctx.beginPath(); ctx.arc(centerX + 4, centerY - 4, 3, 0, Math.PI * 2); ctx.fill();
-                    ctx.beginPath(); ctx.arc(centerX, centerY + 5, 3, 0, Math.PI * 2); ctx.fill();
+                    // Draw 5 bright red dots for berries, scattered around the bush
+                    ctx.fillStyle = '#FF0000'; // Pure Red
+                    ctx.beginPath(); ctx.arc(centerX - 6, centerY - 5, 3, 0, Math.PI * 2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(centerX + 5, centerY - 6, 3, 0, Math.PI * 2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(centerX, centerY + 6, 3, 0, Math.PI * 2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(centerX - 7, centerY + 4, 3, 0, Math.PI * 2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(centerX + 7, centerY + 2, 3, 0, Math.PI * 2); ctx.fill();
 
                     ctx.strokeStyle = '#004d00';
                     ctx.lineWidth = 1;
-                    ctx.beginPath(); ctx.arc(centerX, centerY, 12, 0, Math.PI * 2); ctx.stroke();
+                    ctx.beginPath(); ctx.arc(centerX, centerY, 15, 0, Math.PI * 2); ctx.stroke();
                 }
             }
         }
