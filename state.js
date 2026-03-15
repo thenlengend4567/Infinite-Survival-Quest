@@ -25,13 +25,22 @@ export const gameState = {
             wood: 0,
             stone: 0
         },
+        tools: {
+            axe: false,
+            pickaxe: false
+        },
         gathering: {
             targetId: null,
             timer: 0,
-            requiredTime: 1000 // ms
+            requiredTime: 1000, // ms
+            currentRequiredTime: 1000 // Dynamic based on tools
         }
     },
     ui: {
+        craftMenu: {
+            open: false,
+            buttons: [] // Dynamically calculated bounding boxes for clicks
+        },
         joystick: {
             active: false,
             originX: 0,
@@ -48,6 +57,7 @@ export const gameState = {
         a: false,
         s: false,
         d: false,
+        c: false,
         ArrowUp: false,
         ArrowLeft: false,
         ArrowDown: false,

@@ -76,11 +76,16 @@ export function updatePlayer(deltaTime) {
     // Normalize keyboard vector so diagonal movement isn't faster
     if (isMoving) {
         const length = Math.sqrt(dx * dx + dy * dy);
-        dx /= length;
-        dy /= length;
 
-        deltaX = dx * currentMaxSpeed * (deltaTime / 1000);
-        deltaY = dy * currentMaxSpeed * (deltaTime / 1000);
+        if (length > 0) {
+            dx /= length;
+            dy /= length;
+
+            deltaX = dx * currentMaxSpeed * (deltaTime / 1000);
+            deltaY = dy * currentMaxSpeed * (deltaTime / 1000);
+        } else {
+            isMoving = false; // Canceling keys (e.g. W and S) pressed simultaneously
+        }
     }
     // 2. Process Joystick Input (Analog)
     else if (joystick.active) {
@@ -118,14 +123,23 @@ export function updatePlayer(deltaTime) {
 
     // Gathering Logic
     if (collidedEntity) {
+        const entityType = collidedEntity.entity.type;
         const entityId = collidedEntity.entity.id;
+
+        // Determine required time based on tools
+        player.gathering.currentRequiredTime = player.gathering.requiredTime;
+        if (entityType === 'tree' && player.tools.axe) {
+            player.gathering.currentRequiredTime = 500;
+        } else if (entityType === 'rock' && player.tools.pickaxe) {
+            player.gathering.currentRequiredTime = 500;
+        }
 
         if (player.gathering.targetId === entityId) {
             player.gathering.timer += deltaTime;
-            if (player.gathering.timer >= player.gathering.requiredTime) {
+            if (player.gathering.timer >= player.gathering.currentRequiredTime) {
                 // Harvest complete
-                if (collidedEntity.entity.type === 'tree') player.inventory.wood++;
-                if (collidedEntity.entity.type === 'rock') player.inventory.stone++;
+                if (entityType === 'tree') player.inventory.wood++;
+                if (entityType === 'rock') player.inventory.stone++;
 
                 // Remove entity from chunk and add to persistence set
                 collidedEntity.chunk.entities.delete(collidedEntity.index);
@@ -167,9 +181,11 @@ export function drawPlayer(ctx) {
 
     // Draw Gathering Progress Bar if active
     if (player.gathering.targetId && player.gathering.timer > 0) {
+        // Use the dynamically calculated required time
+        const progress = Math.min(player.gathering.timer / player.gathering.currentRequiredTime, 1.0);
+
         const barWidth = 30;
         const barHeight = 6;
-        const progress = Math.min(player.gathering.timer / player.gathering.requiredTime, 1.0);
 
         // Background
         ctx.fillStyle = '#000000';
