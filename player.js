@@ -1,8 +1,20 @@
 import { gameState } from './state.js';
+import { getTileAtWorldPos } from './world.js';
 
 export function updatePlayer(deltaTime) {
     const { player, keys, ui } = gameState;
     const { joystick } = ui;
+
+    // Determine current terrain to apply physics/speed penalties
+    const currentTileId = getTileAtWorldPos(player.x, player.y);
+    let speedModifier = 1.0;
+
+    // Water Tile ID is 0
+    if (currentTileId === 0) {
+        speedModifier = 0.5; // Cut speed in half
+    }
+
+    const currentMaxSpeed = player.speed * speedModifier;
 
     // Movement vector
     let dx = 0;
@@ -22,14 +34,14 @@ export function updatePlayer(deltaTime) {
         dy /= length;
 
         // Apply max speed based on delta time
-        player.x += dx * player.speed * (deltaTime / 1000);
-        player.y += dy * player.speed * (deltaTime / 1000);
+        player.x += dx * currentMaxSpeed * (deltaTime / 1000);
+        player.y += dy * currentMaxSpeed * (deltaTime / 1000);
     }
     // 2. Process Joystick Input (Analog)
     else if (joystick.active) {
         // Calculate speed based on analog pull distance (0 to 1 ratio)
         const speedRatio = Math.min(joystick.distance / joystick.maxDistance, 1.0);
-        const currentSpeed = player.speed * speedRatio;
+        const currentSpeed = currentMaxSpeed * speedRatio;
 
         // Apply movement using the joystick's angle
         player.x += Math.cos(joystick.angle) * currentSpeed * (deltaTime / 1000);
